@@ -144,6 +144,8 @@ workflow MHCQUANT {
         .ifEmpty { exit 1, "params.fasta was empty - no input file supplied" }
         .set { input_fasta }
 
+    ch_comet_exe = Channel.fromPath(params.comet_exe)
+
     //
     // SUBWORKFLOW: Include protein information
     //
@@ -175,9 +177,10 @@ workflow MHCQUANT {
 
     // Bruker raw file conversion
     MSCONVERT(ms_files.bruker)    
-    ch_versions = ch_versions.mix(MSCONVERT.out.versions.ifEmpty(null))
-    """
-    
+    ch_versions = ch_versions.mix(MSCONVERT.out.versions.ifEmpty(null))    
+    ch_ms_files = MSCONVERT.out.mzml.mix(ms_files.mzml.map{ it -> [it[0], it[1][0]] })
+
+
     if (params.run_centroidisation) {
         // Optional: Run Peak Picking as Preprocessing
         OPENMS_PEAKPICKERHIRES(ch_ms_files)
@@ -188,8 +191,8 @@ workflow MHCQUANT {
     }
 
     // Run comet database search
-    OPENMS_COMETADAPTER(
-            ch_mzml_file.join(ch_decoy_db, remainder:true))
+    OPENMS_COMETADAPTER(ch_mzml_file.join(ch_decoy_db, remainder:true), ch_comet_exe)
+    
     // Write this information to an tsv file
     OPENMS_TEXTEXPORTER_COMET(OPENMS_COMETADAPTER.out.idxml)
     ch_versions = ch_versions.mix(OPENMS_COMETADAPTER.out.versions.ifEmpty(null))
@@ -355,7 +358,7 @@ workflow MHCQUANT {
         multiqc_report = MULTIQC.out.report.toList()
         ch_versions    = ch_versions.mix(MULTIQC.out.versions)
     }
-    """
+
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

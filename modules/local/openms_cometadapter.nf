@@ -9,6 +9,7 @@ process OPENMS_COMETADAPTER {
 
     input:
         tuple val(meta), path(mzml), path(fasta)
+        path(comet_exe)
 
     output:
         tuple val(meta), path("*.idXML"), emit: idxml
@@ -31,19 +32,27 @@ process OPENMS_COMETADAPTER {
         def remove_precursor = params.remove_precursor_peak ? "-remove_precursor_peak yes" : ""
 
         """
+        rm /usr/local/bin/comet.exe
         CometAdapter -in $mzml \\
             -out ${prefix}.idXML \\
             -database $fasta \\
             -threads $task.cpus \\
             -pin_out ${prefix}.tsv \\
-            $args \\
-            $mods \\
-            $xions \\
-            $zions \\
-            $aions \\
-            $cions \\
-            $nlions \\
-            $remove_precursor
+            -comet_executable $comet_exe \\
+            -precursor_error_units 'ppm' \\
+            -precursor_mass_tolerance 20 \\
+            -fragment_mass_tolerance 0.02 \\
+            -num_hits 1 \\
+            -digest_mass_range '600:2500' \\
+            -max_variable_mods_in_peptide 3 \\
+            -missed_cleavages 0 \\
+            -precursor_charge '1:5' \\
+            -activation_method 'CID' \\
+            -variable_modifications 'Oxidation (M)' \\
+            -enzyme 'unspecific cleavage' \\
+            -spectrum_batch_size 0 \\
+            -fixed_modifications \\
+            -debug 1
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
