@@ -144,6 +144,7 @@ workflow MHCQUANT {
         .ifEmpty { exit 1, "params.fasta was empty - no input file supplied" }
         .set { input_fasta }
 
+    // TODO: Check if needed
     ch_comet_exe = Channel.fromPath(params.comet_exe)
 
     //
@@ -191,7 +192,7 @@ workflow MHCQUANT {
     }
 
     // Run comet database search
-    OPENMS_COMETADAPTER(ch_mzml_file.join(ch_decoy_db, remainder:true), ch_comet_exe)
+    OPENMS_COMETADAPTER(ch_mzml_file.join(ch_decoy_db, remainder:true))
     
     // Write this information to an tsv file
     OPENMS_TEXTEXPORTER_COMET(OPENMS_COMETADAPTER.out.idxml)

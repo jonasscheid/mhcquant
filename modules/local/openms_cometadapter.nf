@@ -9,7 +9,7 @@ process OPENMS_COMETADAPTER {
 
     input:
         tuple val(meta), path(mzml), path(fasta)
-        path(comet_exe)
+    
 
     output:
         tuple val(meta), path("*.idXML"), emit: idxml
@@ -38,7 +38,6 @@ process OPENMS_COMETADAPTER {
             -database $fasta \\
             -threads $task.cpus \\
             -pin_out ${prefix}.tsv \\
-            -comet_executable $comet_exe \\
             -precursor_error_units 'ppm' \\
             -precursor_mass_tolerance 20 \\
             -fragment_mass_tolerance 0.02 \\

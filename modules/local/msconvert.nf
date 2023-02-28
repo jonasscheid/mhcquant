@@ -25,7 +25,8 @@ process MSCONVERT {
 
 
         """
-        tar -xvf $brukerfile
+        tar -xzf $brukerfile -C .
+        
         wine msconvert \
             -v \
             --mzML \
@@ -33,7 +34,7 @@ process MSCONVERT {
             --zlib \
             --combineIonMobilitySpectra \
             --filter "scanSumming precursorTol=0.05 scanTimeTol=5 ionMobilityTol=0.1" \
-            "${prefix}.d"
+            ${prefix}.d
 
         
         cat <<-END_VERSIONS > versions.yml
