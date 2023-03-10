@@ -18,16 +18,21 @@ process OPENMS_PERCOLATORADAPTER {
         task.ext.when == null || task.ext.when
 
     script:
-        def prefix           = task.ext.prefix ?: "${meta.id}"
-        def args             = task.ext.args  ?: ''
-        def klammer          = (params.description_correct_features > 0 && params.klammer) ? "-klammer" : ""
+        def prefix    = task.ext.prefix ?: "${meta.id}"
+        def fdr_level = (params.fdr_level == 'psm_level_fdrs') ? "" : "-" + params.fdr_level
 
         """
-        OMP_NUM_THREADS=$task.cpus \\
         PercolatorAdapter -in $psm \\
             -out ${prefix}.idXML \\
-            $klammer \\
-            $args
+            -threads $task.cpus \\
+            -seed 4711 \\
+            -trainFDR 0.05 \\
+            -testFDR 0.05 \\
+            -enzyme no_enzyme \\
+            -subset_max_train ${params.subset_max_train} \\
+            -doc ${params.description_correct_features} \\
+            $fdr_level
+
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

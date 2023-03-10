@@ -19,31 +19,38 @@ process OPENMS_COMETADAPTER {
         task.ext.when == null || task.ext.when
 
     script:
-        def prefix           = task.ext.prefix ?: "${mzml.baseName}"
-        def args             = task.ext.args  ?: ''
-
-        def mods             = params.fixed_mods != " " ? "-fixed_modifications ${params.fixed_mods.tokenize(',').collect { "'${it}'"}.join(" ")}" : "-fixed_modifications"
-        def xions            = params.use_x_ions ? "-use_X_ions true" : ""
-        def zions            = params.use_z_ions ? "-use_Z_ions true" : ""
-        def aions            = params.use_a_ions ? "-use_A_ions true" : ""
-        def cions            = params.use_c_ions ? "-use_C_ions true" : ""
-        def nlions           = params.use_NL_ions ? "-use_NL_ions true" : ""
-        def remove_precursor = params.remove_precursor_peak ? "-remove_precursor_peak yes" : ""
+        def prefix                 = task.ext.prefix ?: "${mzml.baseName}"
+        def fixed_modifications    = params.fixed_mods != " " ? "-fixed_modifications ${params.fixed_mods.tokenize(',').collect { "'${it}'"}.join(" ")}" : "-fixed_modifications"
+        def variable_modifications = params.fixed_mods != " " ? "-variable_modifications ${params.fixed_mods.tokenize(',').collect { "'${it}'"}.join(" ")}" : "-fixed_modifications"
+        def remove_precursor       = params.remove_precursor_peak ? "-remove_precursor_peak yes" : ""
 
         """
+        rm /usr/local/bin/comet.exe
         CometAdapter -in $mzml \\
             -out ${prefix}.idXML \\
             -database $fasta \\
             -threads $task.cpus \\
             -pin_out ${prefix}.tsv \\
-            $args \\
-            $mods \\
-            $xions \\
-            $zions \\
-            $aions \\
-            $cions \\
-            $nlions \\
-            $remove_precursor
+            -comet_executable comet.linux.exe \\
+            -precursor_mass_tolerance ${params.precursor_mass_tolerance} \\
+            -fragment_mass_tolerance ${params.fragment_mass_tolerance} \\
+            -fragment_bin_offset ${params.fragment_bin_offset} \\
+            -num_hits ${params.num_hits} \\
+            -digest_mass_range ${params.digest_mass_range} \\
+            -max_variable_mods_in_peptide ${params.number_mods} \\
+            -missed_cleavages 0 \\
+            -precursor_charge ${params.prec_charge} \\
+            -activation_method ${params.activation_method} \\
+            -enzyme '${params.enzyme}' \\
+            -spectrum_batch_size ${params.spectrum_batch_size} \\
+            -use_X_ions ${params.use_x_ions} \\
+            -use_Z_ions ${params.use_z_ions} \\
+            -use_A_ions ${params.use_a_ions} \\
+            -use_C_ions ${params.use_c_ions} \\
+            -use_NL_ions ${params.use_NL_ions} \\
+            $remove_precursor \\
+            $fixed_modifications \\
+            $variable_modifications
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

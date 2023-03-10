@@ -120,7 +120,7 @@ workflow MHCQUANT {
     // SUBWORKFLOW: Check the input file
     //
     INPUT_CHECK(params.input)
-        .reads
+        .ms_files
         .set { ch_samples_from_sheet }
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
@@ -141,6 +141,7 @@ workflow MHCQUANT {
         .ifEmpty { exit 1, "params.fasta was empty - no input file supplied" }
         .set { input_fasta }
 
+    //input_fasta.view{"$it"}
     //
     // SUBWORKFLOW: Include protein information
     //
@@ -202,8 +203,8 @@ workflow MHCQUANT {
     } else {
         ch_proceeding_idx = OPENMS_PEPTIDEINDEXER.out.idxml
             .map {
-                meta, raw ->
-                [[id:meta.sample + "_" + meta.condition, sample:meta.sample, condition:meta.condition, ext:meta.ext], raw]
+                meta, idxml ->
+                [[id:meta.sample + "_" + meta.condition, sample:meta.sample, condition:meta.condition, ext:meta.ext], idxml]
             }
             .groupTuple(by: [0])
     }

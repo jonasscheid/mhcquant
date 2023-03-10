@@ -13,10 +13,10 @@ workflow INPUT_CHECK {
         .csv
         .splitCsv ( header:true, sep:'\t' )
         .map { create_ms_channel(it) }
-        .set { reads }
+        .set { ms_files }
 
     emit:
-    reads                                     // channel: [ val(meta), [ reads ] ]
+    ms_files                                     // channel: [ val(meta), [ reads ] ]
     versions = SAMPLESHEET_CHECK.out.versions // channel: [ versions.yml ]
 }
 
