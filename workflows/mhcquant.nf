@@ -61,6 +61,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 include { OPENMS_DECOYDATABASE }                                            from '../modules/local/openms_decoydatabase'
 include { OPENMS_THERMORAWFILEPARSER }                                      from '../modules/local/openms_thermorawfileparser'
 include { MSCONVERT }                                                       from '../modules/local/msconvert'
+include { TDF2MZML }                                                        from '../modules/local/tdf2mzml'
 include { OPENMS_PEAKPICKERHIRES }                                          from '../modules/local/openms_peakpickerhires'
 include { OPENMS_COMETADAPTER }                                             from '../modules/local/openms_cometadapter'
 include { OPENMS_PEPTIDEINDEXER }                                           from '../modules/local/openms_peptideindexer'
@@ -144,9 +145,6 @@ workflow MHCQUANT {
         .ifEmpty { exit 1, "params.fasta was empty - no input file supplied" }
         .set { input_fasta }
 
-    // TODO: Check if needed
-    ch_comet_exe = Channel.fromPath(params.comet_exe)
-
     //
     // SUBWORKFLOW: Include protein information
     //
@@ -180,7 +178,9 @@ workflow MHCQUANT {
     MSCONVERT(ms_files.bruker)    
     ch_versions = ch_versions.mix(MSCONVERT.out.versions.ifEmpty(null))    
     ch_ms_files = MSCONVERT.out.mzml.mix(ms_files.mzml.map{ it -> [it[0], it[1][0]] })
-
+    //TDF2MZML(ms_files.bruker)
+    //ch_ms_files = TDF2MZML.out.mzml.mix(ms_files.mzml.map{ it -> [it[0], it[1][0]] })
+    //ch_versions = ch_versions.mix(TDF2MZML.out.versions.ifEmpty(null))   
 
     if (params.run_centroidisation) {
         // Optional: Run Peak Picking as Preprocessing

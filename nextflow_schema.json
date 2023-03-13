@@ -22,15 +22,6 @@
                     "schema": "assets/schema_input.json",
                     "fa_icon": "fas fa-file-csv"
                 },
-                "comet_exe": {
-                    "type": "string",
-                    "description": "comet_exe",
-                    "help_text": "",
-                    "format": "file-path",
-                    "pattern": "^\\S+\\.exe$",
-                    "schema": "assets/schema_input.json",
-                    "fa_icon": "fas fa-file-csv"
-                },
                 "outdir": {
                     "type": "string",
                     "format": "directory-path",

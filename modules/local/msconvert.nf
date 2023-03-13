@@ -33,7 +33,7 @@ process MSCONVERT {
             --inten64 \
             --zlib \
             --combineIonMobilitySpectra \
-            --filter "scanSumming precursorTol=0.05 scanTimeTol=5 ionMobilityTol=0.1" \
+            --filter "scanSumming precursorTol=0.05 scanTimeTol=10 ionMobilityTol=0.01" \
             ${prefix}.d
 
         
