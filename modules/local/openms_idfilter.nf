@@ -22,6 +22,7 @@ process OPENMS_IDFILTER {
         def prefix           = task.ext.prefix ?: "${meta.id}_-_${idxml.baseName}_filtered"
         def args             = task.ext.args  ?: ''
 
+        // Contains predicted binders by MHCflurry
         if (whitelist == "input.2") {
             whitelist = " "
         }

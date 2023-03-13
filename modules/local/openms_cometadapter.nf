@@ -25,13 +25,11 @@ process OPENMS_COMETADAPTER {
         def remove_precursor       = params.remove_precursor_peak ? "-remove_precursor_peak yes" : ""
 
         """
-        rm /usr/local/bin/comet.exe
         CometAdapter -in $mzml \\
             -out ${prefix}.idXML \\
             -database $fasta \\
             -threads $task.cpus \\
             -pin_out ${prefix}.tsv \\
-            -comet_executable comet.linux.exe \\
             -precursor_mass_tolerance ${params.precursor_mass_tolerance} \\
             -fragment_mass_tolerance ${params.fragment_mass_tolerance} \\
             -fragment_bin_offset ${params.fragment_bin_offset} \\
