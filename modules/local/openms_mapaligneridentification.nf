@@ -19,11 +19,14 @@ process OPENMS_MAPALIGNERIDENTIFICATION {
 
     script:
         def out_names        = idxml.collect { it.baseName+'.trafoXML' }.join(' ')
+        def out_idxml        = idxml.collect { it.baseName+'.idXML' }.join(' ')
         def args             = task.ext.args  ?: ''
 
         """
         MapAlignerIdentification -in $idxml \\
-            -trafo_out ${out_names} \\
+            -model:type linear \\
+            -algorithm:max_rt_shift ${params.max_rt_alignment_shift} \\
+            -trafo_out $out_names \\
             $args
 
         cat <<-END_VERSIONS > versions.yml

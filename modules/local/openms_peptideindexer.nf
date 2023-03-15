@@ -25,7 +25,7 @@ process OPENMS_PEPTIDEINDEXER {
                 -out ${prefix}.idXML \\
                 -threads $task.cpus \\
                 -fasta $fasta \\
-                -decoy_string DECOY \\
+                -decoy_string DECOY_ \\
                 -enzyme:specificity none
 
         cat <<-END_VERSIONS > versions.yml

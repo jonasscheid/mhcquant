@@ -21,7 +21,7 @@ process OPENMS_COMETADAPTER {
     script:
         def prefix                 = task.ext.prefix ?: "${mzml.baseName}"
         def fixed_modifications    = params.fixed_mods != " " ? "-fixed_modifications ${params.fixed_mods.tokenize(',').collect { "'${it}'"}.join(" ")}" : "-fixed_modifications"
-        def variable_modifications = params.fixed_mods != " " ? "-variable_modifications ${params.fixed_mods.tokenize(',').collect { "'${it}'"}.join(" ")}" : "-fixed_modifications"
+        def variable_modifications = params.variable_mods != " " ? "-variable_modifications ${params.variable_mods.tokenize(',').collect { "'${it}'"}.join(" ")}" : "-variable_modifications"
         def remove_precursor       = params.remove_precursor_peak ? "-remove_precursor_peak yes" : ""
 
         """
@@ -29,7 +29,8 @@ process OPENMS_COMETADAPTER {
             -out ${prefix}.idXML \\
             -database $fasta \\
             -threads $task.cpus \\
-            -pin_out ${prefix}.tsv \\
+            -comet_executable comet.linux.exe \\
+            -pin_out ${prefix}_pin.tsv \\
             -precursor_mass_tolerance ${params.precursor_mass_tolerance} \\
             -fragment_mass_tolerance ${params.fragment_mass_tolerance} \\
             -fragment_bin_offset ${params.fragment_bin_offset} \\
@@ -48,7 +49,8 @@ process OPENMS_COMETADAPTER {
             -use_NL_ions ${params.use_NL_ions} \\
             $remove_precursor \\
             $fixed_modifications \\
-            $variable_modifications
+            $variable_modifications \\
+            -debug 10 \\
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

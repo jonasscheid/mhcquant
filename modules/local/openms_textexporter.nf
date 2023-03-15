@@ -25,7 +25,7 @@ process OPENMS_TEXTEXPORTER {
         TextExporter -in $consensus_or_idXML \\
             -out ${prefix}.tsv \\
             -threads $task.cpus \\
-            -id:add_hit_metavalues 20 \\
+            -id:add_hit_metavalues 0 \\
             -id:peptides_only \\
             $args
 
