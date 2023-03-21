@@ -62,11 +62,13 @@ include { OPENMS_DECOYDATABASE }                                            from
 include { OPENMS_THERMORAWFILEPARSER }                                      from '../modules/local/openms_thermorawfileparser'
 include { OPENMS_PEAKPICKERHIRES }                                          from '../modules/local/openms_peakpickerhires'
 include { OPENMS_COMETADAPTER }                                             from '../modules/local/openms_cometadapter'
+include { OPENMS_XTANDEMADAPTER }                                             from '../modules/local/openms_xtandemadapter'
 include { OPENMS_PEPTIDEINDEXER }                                           from '../modules/local/openms_peptideindexer'
 
-include { OPENMS_TEXTEXPORTER as OPENMS_TEXTEXPORTER_COMET }                from '../modules/local/openms_textexporter'
+include { OPENMS_TEXTEXPORTER as OPENMS_TEXTEXPORTER_XTANDEM }                from '../modules/local/openms_textexporter'
 
 include { OPENMS_IDFILTER as OPENMS_IDFILTER_Q_VALUE }                      from '../modules/local/openms_idfilter'
+include { OPENMS_IDFILTER as OPENMS_IDFILTER_BEFORE_PERCOLATOR }            from '../modules/local/openms_idfilter'
 include { OPENMS_IDMERGER }                                                 from '../modules/local/openms_idmerger'
 include { OPENMS_PSMFEATUREEXTRACTOR }                                      from '../modules/local/openms_psmfeatureextractor'
 include { OPENMS_PERCOLATORADAPTER }                                        from '../modules/local/openms_percolatoradapter'
@@ -180,13 +182,14 @@ workflow MHCQUANT {
     }
 
     // Run comet database search
-    OPENMS_COMETADAPTER(
-            ch_mzml_file.join(ch_decoy_db, remainder:true))
+    //OPENMS_COMETADAPTER(
+    //ch_mzml_file.join(ch_decoy_db, remainder:true))
+    OPENMS_XTANDEMADAPTER(ch_mzml_file.join(ch_decoy_db, remainder:true))
     // Write this information to an tsv file
-    OPENMS_TEXTEXPORTER_COMET(OPENMS_COMETADAPTER.out.idxml)
-    ch_versions = ch_versions.mix(OPENMS_COMETADAPTER.out.versions.ifEmpty(null))
+    OPENMS_TEXTEXPORTER_XTANDEM(OPENMS_XTANDEMADAPTER.out.idxml)
+    ch_versions = ch_versions.mix(OPENMS_XTANDEMADAPTER.out.versions.ifEmpty(null))
     // Index decoy and target hits
-    OPENMS_PEPTIDEINDEXER(OPENMS_COMETADAPTER.out.idxml.join(ch_decoy_db))
+    OPENMS_PEPTIDEINDEXER(OPENMS_XTANDEMADAPTER.out.idxml.join(ch_decoy_db))
     ch_versions = ch_versions.mix(OPENMS_PEPTIDEINDEXER.out.versions.ifEmpty(null))
 
     //
@@ -202,8 +205,8 @@ workflow MHCQUANT {
     } else {
         ch_proceeding_idx = OPENMS_PEPTIDEINDEXER.out.idxml
             .map {
-                meta, raw ->
-                [[id:meta.sample + "_" + meta.condition, sample:meta.sample, condition:meta.condition, ext:meta.ext], raw]
+                meta, idxml ->
+                [[id:meta.sample + "_" + meta.condition, sample:meta.sample, condition:meta.condition, ext:meta.ext], idxml]
             }
             .groupTuple(by: [0])
     }
@@ -214,6 +217,8 @@ workflow MHCQUANT {
     // Extract PSM features for Percolator
     OPENMS_PSMFEATUREEXTRACTOR(OPENMS_IDMERGER.out.idxml)
     ch_versions = ch_versions.mix(OPENMS_PSMFEATUREEXTRACTOR.out.versions.ifEmpty(null))
+
+    OPENMS_IDFILTER_BEFORE_PERCOLATOR(OPENMS_PSMFEATUREEXTRACTOR.out.idxml)
     // Run Percolator
     OPENMS_PERCOLATORADAPTER(OPENMS_PSMFEATUREEXTRACTOR.out.idxml)
     ch_versions = ch_versions.mix(OPENMS_PERCOLATORADAPTER.out.versions.ifEmpty(null))
