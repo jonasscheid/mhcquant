@@ -37,6 +37,7 @@ process OPENMS_COMETADAPTER {
             -out ${prefix}.idXML \\
             -database $fasta \\
             -threads $task.cpus \\
+            -comet_executable comet.linux.exe \\
             -pin_out ${prefix}.tsv \\
             -precursor_error_units 'ppm' \\
             -precursor_mass_tolerance 20 \\
