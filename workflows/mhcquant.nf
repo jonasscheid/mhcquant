@@ -62,6 +62,7 @@ include { OPENMS_DECOYDATABASE }                                            from
 include { OPENMS_THERMORAWFILEPARSER }                                      from '../modules/local/openms_thermorawfileparser'
 include { OPENMS_PEAKPICKERHIRES }                                          from '../modules/local/openms_peakpickerhires'
 include { OPENMS_COMETADAPTER }                                             from '../modules/local/openms_cometadapter'
+include { OPENMS_MSGFPLUSADAPTER }                                   from '../modules/local/openms_msgfplusadapter'
 include { OPENMS_PEPTIDEINDEXER }                                           from '../modules/local/openms_peptideindexer'
 
 include { OPENMS_TEXTEXPORTER as OPENMS_TEXTEXPORTER_COMET }                from '../modules/local/openms_textexporter'
@@ -180,13 +181,15 @@ workflow MHCQUANT {
     }
 
     // Run comet database search
-    OPENMS_COMETADAPTER(
+    //OPENMS_COMETADAPTER(
+    //        ch_mzml_file.join(ch_decoy_db, remainder:true))
+    OPENMS_MSGFPLUSADAPTER(
             ch_mzml_file.join(ch_decoy_db, remainder:true))
     // Write this information to an tsv file
-    OPENMS_TEXTEXPORTER_COMET(OPENMS_COMETADAPTER.out.idxml)
-    ch_versions = ch_versions.mix(OPENMS_COMETADAPTER.out.versions.ifEmpty(null))
+    OPENMS_TEXTEXPORTER_COMET(OPENMS_MSGFPLUSADAPTER.out.idxml)
+    ch_versions = ch_versions.mix(OPENMS_MSGFPLUSADAPTER.out.versions.ifEmpty(null))
     // Index decoy and target hits
-    OPENMS_PEPTIDEINDEXER(OPENMS_COMETADAPTER.out.idxml.join(ch_decoy_db))
+    OPENMS_PEPTIDEINDEXER(OPENMS_MSGFPLUSADAPTER.out.idxml.join(ch_decoy_db))
     ch_versions = ch_versions.mix(OPENMS_PEPTIDEINDEXER.out.versions.ifEmpty(null))
 
     //
