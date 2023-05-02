@@ -133,11 +133,9 @@ workflow MHCQUANT {
                     return [ meta, filename ]
                 mzml : meta.ext == 'mzml'
                     return [ meta, filename ]
-                bruker : meta.ext == 'gz'
-                    return [ meta, filename ]
                 other : true }
         .set { ms_files }
-    
+
     // Input fasta file
     Channel.fromPath(params.fasta)
         .combine(ch_samples_from_sheet)
@@ -168,7 +166,7 @@ workflow MHCQUANT {
         ch_decoy_db = ch_fasta_file
     }
 
-    // Thermofisher raw file conversion
+    // Raw file conversion
     OPENMS_THERMORAWFILEPARSER(ms_files.raw)
     ch_versions = ch_versions.mix(OPENMS_THERMORAWFILEPARSER.out.versions.ifEmpty(null))
     // Define the ch_ms_files channels to combine the mzml files
@@ -237,8 +235,7 @@ workflow MHCQUANT {
     // Return an error message when there is only a header present in the document
     OPENMS_TEXTEXPORTER_FDR.out.tsv.map {
         meta, tsv -> if (tsv.size() < 130) {
-            log.error "It seems that there were no significant hits found for one or more samples.\nPlease consider incrementing the '--fdr_threshold' after removing the work directory or to exclude this sample."
-            exit(0)
+            log.warn "It seems that there were no significant hits found for this sample: " + meta.sample + "\nPlease consider incrementing the '--fdr_threshold' after removing the work directory or to exclude this sample. "
         }
     }
 
@@ -327,7 +324,7 @@ workflow MHCQUANT {
         PYOPENMS_IONANNOTATOR(ch_raw_spectra_data)
         ch_versions = ch_versions.mix(PYOPENMS_IONANNOTATOR.out.versions.ifEmpty(null))
     }
-    
+
     //
     // MODULE: Pipeline reporting
     //
@@ -361,6 +358,7 @@ workflow MHCQUANT {
     }
 
 }
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     COMPLETION EMAIL AND SUMMARY
@@ -373,7 +371,7 @@ workflow.onComplete {
     }
     NfcoreTemplate.summary(workflow, params, log)
     if (params.hook_url) {
-        NfcoreTemplate.adaptivecard(workflow, params, summary_params, projectDir, log)
+        NfcoreTemplate.IM_notification(workflow, params, summary_params, projectDir, log)
     }
 }
 
