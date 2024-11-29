@@ -11,7 +11,7 @@ process MS2RESCORE {
     containerOptions = (workflow.containerEngine == 'docker') ? '-u $(id -u) -e "HOME=${HOME}" -v /etc/passwd:/etc/passwd:ro -v /etc/shadow:/etc/shadow:ro -v /etc/group:/etc/group:ro -v $HOME:$HOME' : ''
 
     input:
-    tuple val(meta), path(idxml), path(mzml), path(fasta)
+    tuple val(meta), path(idxml), path(mzml), path(fasta), path(ms2pip_model_dir)
 
     output:
     tuple val(meta), path("*ms2rescore.idXML") , emit: idxml
@@ -25,6 +25,7 @@ process MS2RESCORE {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}_ms2rescore"
+    def arg_ms2pip_model_dir = ms2pip_model_dir.name != 'NO_FILE' ? "--ms2pip_model_dir ${ms2pip_model_dir}" : ""
 
     """
     ms2rescore_cli.py \\
@@ -32,6 +33,7 @@ process MS2RESCORE {
         --spectrum_path . \\
         --output_path ${prefix}.idXML \\
         --processes $task.cpus \\
+        $arg_ms2pip_model_dir \\
         $args
 
     cat <<-END_VERSIONS > versions.yml

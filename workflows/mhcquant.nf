@@ -138,11 +138,15 @@ workflow MHCQUANT {
     ch_versions = ch_versions.mix(OPENMS_IDMERGER.out.versions)
 
     // Run MS2Rescore
+    ch_ms2pip_model_dir = params.ms2pip_model_dir ?
+        Channel.fromPath(params.ms2pip_model_dir, checkIfExists: true, type: 'dir') :
+        Channel.fromPath("$projectDir/assets/NO_FILE")
     ch_clean_mzml_file
             .map { meta, mzml -> [ groupKey([id: "${meta.sample}_${meta.condition}"], meta.group_count), mzml] }
             .groupTuple()
             .join(OPENMS_IDMERGER.out.idxml)
             .map { meta, mzml, idxml -> [meta, idxml, mzml, []] }
+            .combine(ch_ms2pip_model_dir)
             .set { ch_ms2rescore_in }
 
     MS2RESCORE(ch_ms2rescore_in)
