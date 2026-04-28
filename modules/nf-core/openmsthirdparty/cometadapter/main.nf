@@ -4,7 +4,7 @@ process OPENMSTHIRDPARTY_COMETADAPTER {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'oras://ghcr.io/openms/openms-tools-thirdparty-sif:latest' :
+        'ghcr.io/openms/openms-tools-thirdparty:latest' :
         'ghcr.io/openms/openms-tools-thirdparty:latest' }"
 
     input:
