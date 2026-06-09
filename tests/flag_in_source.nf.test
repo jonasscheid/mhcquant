@@ -14,8 +14,6 @@ nextflow_pipeline {
         }
 
         then {
-            assert workflow.success
-
             // The is_isf flag must reach the final per-peptidoform TSV(s).
             def tsvs_with_peptidoform = []
             def tsvs_with_is_isf = []
@@ -36,6 +34,10 @@ nextflow_pipeline {
 
             assertAll(
                 { assert workflow.success },
+                { assert snapshot(
+                    // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
+                    removeNextflowVersion("$outputDir/pipeline_info/nf_core_mhcquant_software_mqc_versions.yml")
+                ).match() },
                 // at least one result TSV was produced
                 { assert tsvs_with_peptidoform.size() > 0 },
                 // every result TSV carries the is_isf column when flagging is enabled

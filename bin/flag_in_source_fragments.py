@@ -168,9 +168,9 @@ def build_parent_index(parents, min_len):
     return index
 
 
-def flag_candidate(cand, parent_index, delta_obs, delta_pred):
+def flag_candidate(cand, parent_index, delta_obs, delta_pred, min_len):
     """Return the best matching parent dict if cand is an ISF, else None."""
-    if (cand["sequence"] is None or len(cand["sequence"]) < MIN_OVERLAP_LEN
+    if (cand["sequence"] is None or len(cand["sequence"]) < min_len
             or cand["rt_obs"] is None or cand["rt_pred"] is None):
         return None
     candidates = parent_index.get(cand["sequence"])
@@ -235,7 +235,7 @@ def main(argv=None):
         isf_parent = None
         if rec["target_decoy"] != "decoy":
             isf_parent = flag_candidate(rec, parent_index_by_run.get(rec["run"], {}),
-                                        args.delta_obs, delta_pred)
+                                        args.delta_obs, delta_pred, args.min_len)
         is_isf = isf_parent is not None
         # annotate the rank-1 hit and persist
         hits = pid.getHits()

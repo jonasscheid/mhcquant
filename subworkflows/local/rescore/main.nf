@@ -91,21 +91,8 @@ workflow RESCORE {
         }
     }
 
-    // Optionally flag in-source fragments and re-inject the flagged candidates into the
-    // FDR-filtered set so they reach quantification (parents = the FDR-filtered hits,
-    // candidates = the 100% FDR rescored runs). The augmented idXML replaces fdr_filtered.
-    if (params.flag_in_source) {
-        ch_flag_in_source = ch_filter_q_value
-            .map { meta, file -> [meta.id, meta, file] }
-            .join(ch_rescored_runs.map { meta, file -> [meta.id, file] }, by: 0)
-            .map { id, meta, filtered, rescored -> [meta, filtered, rescored] }
-        PYOPENMS_FLAGINSOURCE(ch_flag_in_source)
-        // Augmented filtered (whitelist + ID export) replaces fdr_filtered; the is_isf-annotated
-        // rescored runs replace rescored_runs so the flag survives into quantification.
-        ch_filter_q_value = PYOPENMS_FLAGINSOURCE.out.idxml
-        ch_rescored_runs  = PYOPENMS_FLAGINSOURCE.out.rescored_idxml
-    }
-
+    // Branch the FDR-filtered runs FIRST so empty samples (no peptides passing FDR) are diverted
+    // before any flagging, regardless of --flag_in_source.
     ch_filter_q_value
         .map { meta, file -> [[id: meta.id], file] }
         .branch {
@@ -115,9 +102,43 @@ workflow RESCORE {
         }
         .set { ch_fdr_branched }
 
+    // Optionally flag in-source fragments and re-inject the flagged candidates into the
+    // FDR-filtered set so they reach quantification (parents = the FDR-filtered hits, candidates
+    // = the 100% FDR rescored runs). Only non-empty samples are flagged; the augmented filtered
+    // replaces fdr_filtered and the is_isf-annotated rescored runs replace rescored_runs so the
+    // flag survives into quantification.
+    if (params.flag_in_source && params.global_fdr) {
+        log.warn("'--flag_in_source' is not supported together with '--global_fdr' and will be skipped.")
+    }
+
+    if (params.flag_in_source && !params.global_fdr) {
+        PYOPENMS_FLAGINSOURCE(
+            ch_fdr_branched.non_empty
+                .map { meta, file -> [meta.id, meta, file] }
+                .join(ch_rescored_runs.map { meta, file -> [meta.id, file] }, by: 0)
+                .map { id, meta, filtered, rescored -> [meta, filtered, rescored] }
+        )
+        // Re-branch the augmented filtered (defensive; appended ISF keep it non-empty).
+        PYOPENMS_FLAGINSOURCE.out.idxml
+            .map { meta, file -> [[id: meta.id], file] }
+            .branch {
+                non_empty: it[1].countLines() > 130
+                empty:     true
+            }
+            .set { ch_fdr_flagged }
+
+        ch_fdr_filtered       = ch_fdr_flagged.non_empty
+        ch_fdr_filtered_empty = ch_fdr_branched.empty.mix(ch_fdr_flagged.empty)
+        ch_rescored_runs      = PYOPENMS_FLAGINSOURCE.out.rescored_idxml
+    }
+    else {
+        ch_fdr_filtered       = ch_fdr_branched.non_empty
+        ch_fdr_filtered_empty = ch_fdr_branched.empty
+    }
+
     emit:
     rescored_runs      = ch_rescored_runs.map { meta, file -> [[id: meta.id], file] }
-    fdr_filtered       = ch_fdr_branched.non_empty
-    fdr_filtered_empty = ch_fdr_branched.empty
+    fdr_filtered       = ch_fdr_filtered
+    fdr_filtered_empty = ch_fdr_filtered_empty
     multiqc_files      = ch_multiqc_files
 }
