@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 
-- Added `--flag_in_source` to flag in-source fragments (`is_isf` UserParam) and re-inject them into the FDR-filtered set so their signal reaches quantification [#XXX](https://github.com/nf-core/mhcquant/pull/XXX)
+- Added `--flag_in_source` to flag in-source fragments (`is_isf` UserParam) and re-inject them into the FDR-filtered set so their signal reaches quantification [#3](https://github.com/jonasscheid/mhcquant/pull/3)
 
 ### `Changed`
 
