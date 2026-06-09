@@ -13,6 +13,7 @@ include {
     OPENMS_PERCOLATORADAPTER as OPENMS_PERCOLATORADAPTER_GLOBAL
 } from '../../../modules/local/openmsthirdparty/percolatoradapter'
 include { OPENMS_TEXTEXPORTER as OPENMS_TEXTEXPORTER_GLOBAL           } from '../../../modules/nf-core/openms/textexporter/main'
+include { PYOPENMS_FLAGINSOURCE                                       } from '../../../modules/local/pyopenms/flaginsource'
 //
 // MODULE: Installed directly from nf-core/modules
 //
@@ -88,6 +89,21 @@ workflow RESCORE {
             OPENMS_IDFILTER_Q_VALUE(ch_rescored_runs.map { group_meta, idxml -> [group_meta, idxml, []] })
             ch_filter_q_value = OPENMS_IDFILTER_Q_VALUE.out.filtered
         }
+    }
+
+    // Optionally flag in-source fragments and re-inject the flagged candidates into the
+    // FDR-filtered set so they reach quantification (parents = the FDR-filtered hits,
+    // candidates = the 100% FDR rescored runs). The augmented idXML replaces fdr_filtered.
+    if (params.flag_in_source) {
+        ch_flag_in_source = ch_filter_q_value
+            .map { meta, file -> [meta.id, meta, file] }
+            .join(ch_rescored_runs.map { meta, file -> [meta.id, file] }, by: 0)
+            .map { id, meta, filtered, rescored -> [meta, filtered, rescored] }
+        PYOPENMS_FLAGINSOURCE(ch_flag_in_source)
+        // Augmented filtered (whitelist + ID export) replaces fdr_filtered; the is_isf-annotated
+        // rescored runs replace rescored_runs so the flag survives into quantification.
+        ch_filter_q_value = PYOPENMS_FLAGINSOURCE.out.idxml
+        ch_rescored_runs  = PYOPENMS_FLAGINSOURCE.out.rescored_idxml
     }
 
     ch_filter_q_value

@@ -1,0 +1,46 @@
+nextflow_pipeline {
+
+    name "Test pipeline with in-source fragment flagging"
+    script "../main.nf"
+    tag "pipeline"
+
+    test("-profile test --flag_in_source") {
+
+        when {
+            params {
+                outdir         = "$outputDir"
+                flag_in_source = true
+            }
+        }
+
+        then {
+            assert workflow.success
+
+            // The is_isf flag must reach the final per-peptidoform TSV(s).
+            def tsvs_with_peptidoform = []
+            def tsvs_with_is_isf = []
+            new File(params.outdir).eachFileRecurse { file ->
+                if (file.name.endsWith('.tsv')) {
+                    def lines = file.readLines()
+                    if (lines.size() > 0) {
+                        def header = lines[0].split('\t') as List
+                        if (header.contains('peptidoform')) {
+                            tsvs_with_peptidoform.add(file.name)
+                            if (header.contains('is_isf')) {
+                                tsvs_with_is_isf.add(file.name)
+                            }
+                        }
+                    }
+                }
+            }
+
+            assertAll(
+                { assert workflow.success },
+                // at least one result TSV was produced
+                { assert tsvs_with_peptidoform.size() > 0 },
+                // every result TSV carries the is_isf column when flagging is enabled
+                { assert tsvs_with_is_isf.size() == tsvs_with_peptidoform.size() }
+            )
+        }
+    }
+}

@@ -331,6 +331,13 @@
                     "fa_icon": "fas fa-less-than",
                     "description": "Compute global FDR and backfilter sample-specific FDRs"
                 },
+                "flag_in_source": {
+                    "type": "boolean",
+                    "default": false,
+                    "fa_icon": "fas fa-tags",
+                    "description": "Flag in-source fragments and re-inject them into the FDR-filtered set for quantification",
+                    "help_text": "When enabled, after rescoring the pipeline flags in-source dissociation fragments among the 100% FDR PSMs using the FDR-filtered peptides as parents (a fragment co-elutes with its parent in observed RT but DeepLC predicts a different RT). Each PeptideHit is tagged with an `is_isf` UserParam, and the flagged fragments are appended to the FDR-filtered idXML so their signal reaches quantification. The `is_isf` flag is exported to the final TSV."
+                },
 
                 "subset_max_train": {
                     "type": "integer",
