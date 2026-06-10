@@ -220,40 +220,45 @@ def main(argv=None):
     parent_index_by_run = {run: build_parent_index(ps, args.min_len)
                            for run, ps in parents_by_run.items()}
 
-    # Walk rescored identifications once. Annotate is_isf on EVERY rescored PSM (so the flag
-    # survives into quantification, which rips/quantifies from the rescored runs), and collect
-    # the augmented filtered subset (filtered hits + flagged ISF candidates) used as the
-    # whitelist / identification export.
-    rescored_out = []
-    filtered_out = []
-    n_isf = n_isf_subthreshold = 0
+    # Pass 1 — per-PSM (per-run) flagging. Record, for every rank-1 hit, its peptidoform
+    # (modified sequence), origin-run identity, and whether it is in the filtered set; collect the
+    # set of flagged peptidoforms (peptidoform -> matched parent sequence).
+    psms = []                      # (pid, peptidoform, in_filtered)
+    flagged_peptidoforms = {}      # peptidoform -> isf_parent_sequence
     for pid in resc_pids:
         rec = best_hit_record(pid, resolve_run(pid, resc_sd))
         if rec is None:
             continue
+        peptidoform = pid.getHits()[0].getSequence().toString()
         in_filtered = rec["key"] in filtered_keys
-        isf_parent = None
         if rec["target_decoy"] != "decoy":
-            isf_parent = flag_candidate(rec, parent_index_by_run.get(rec["run"], {}),
-                                        args.delta_obs, delta_pred, args.min_len)
-        is_isf = isf_parent is not None
-        # annotate the rank-1 hit and persist
+            parent = flag_candidate(rec, parent_index_by_run.get(rec["run"], {}),
+                                    args.delta_obs, delta_pred, args.min_len)
+            if parent is not None:
+                flagged_peptidoforms.setdefault(peptidoform, parent["sequence"])
+        psms.append((pid, peptidoform, in_filtered))
+
+    # Pass 2 — propagate the flag to the PEPTIDOFORM level. A peptidoform flagged in any run is an
+    # in-source fragment everywhere, so we annotate every PSM of it. This is what makes the flag
+    # survive quantification: QUANT picks one representative PSM per peptidoform in the consensus,
+    # and a per-PSM flag would be lost whenever the representative came from an unflagged run.
+    rescored_out = []
+    filtered_out = []
+    for pid, peptidoform, in_filtered in psms:
+        is_isf = peptidoform in flagged_peptidoforms
         hits = pid.getHits()
         hits[0].setMetaValue("is_isf", "true" if is_isf else "false")
         if is_isf:
-            hits[0].setMetaValue("isf_parent_sequence", isf_parent["sequence"])
+            hits[0].setMetaValue("isf_parent_sequence", flagged_peptidoforms[peptidoform])
         pid.setHits(hits)
         rescored_out.append(pid)
         if in_filtered or is_isf:
             filtered_out.append(pid)
-        if is_isf:
-            n_isf += 1
-            if not in_filtered:
-                n_isf_subthreshold += 1
 
-    log.info("is_isf=true: %d (of which %d sub-threshold appended to filtered); "
+    n_isf_psms = sum(1 for _, pf, _ in psms if pf in flagged_peptidoforms)
+    log.info("flagged peptidoforms: %d | is_isf=true PSMs (peptidoform-propagated): %d | "
              "filtered out=%d, rescored out=%d",
-             n_isf, n_isf_subthreshold, len(filtered_out), len(rescored_out))
+             len(flagged_peptidoforms), n_isf_psms, len(filtered_out), len(rescored_out))
 
     # Use the rescored ProteinIdentification (superset) so all protein_refs resolve.
     oms.IdXMLFile().store(args.out, resc_prot, filtered_out)
