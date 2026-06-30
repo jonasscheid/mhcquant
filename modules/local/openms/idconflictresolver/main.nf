@@ -1,6 +1,7 @@
 process OPENMS_IDCONFLICTRESOLVER {
     tag "$meta.id"
     label 'process_single'
+    label 'openms'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -11,7 +12,7 @@ process OPENMS_IDCONFLICTRESOLVER {
     tuple val(meta), path(consensus)
 
     output:
-    tuple val(meta), path("*.consensusXML"), emit: consensusxml
+    tuple val(meta), path("*.consensusparquet"), emit: consensusxml
     tuple val("${task.process}"), val('openms'), eval("FileInfo --help 2>&1 | grep -E '^Version' | sed 's/^.*Version: //; s/-.*\$//' | sed 's/ -*//; s/ .*\$//'"), topic: versions
 
     when:
@@ -23,7 +24,7 @@ process OPENMS_IDCONFLICTRESOLVER {
     """
     IDConflictResolver \\
         -in $consensus \\
-        -out ${prefix}.consensusXML \\
+        -out ${prefix}.consensusparquet \\
         -threads $task.cpus
     """
 
@@ -31,6 +32,6 @@ process OPENMS_IDCONFLICTRESOLVER {
     def prefix = task.ext.prefix ?: "${meta.id}_resolved"
 
     """
-    touch ${prefix}.consensusXML
+    mkdir ${prefix}.consensusparquet
     """
 }

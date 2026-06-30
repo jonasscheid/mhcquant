@@ -1,6 +1,7 @@
 process OPENMS_FEATUREFINDERIDENTIFICATION  {
     tag "$meta.id"
     label 'process_medium'
+    label 'openms'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -12,7 +13,7 @@ process OPENMS_FEATUREFINDERIDENTIFICATION  {
     tuple val(meta), path(mzml), path(id_int), path(id_ext)
 
     output:
-    tuple val(meta), path("*.featureXML"), emit: featurexml
+    tuple val(meta), path("*.featureparquet"), emit: featurexml
     tuple val("${task.process}"), val('openms'), eval("FileInfo --help 2>&1 | grep -E '^Version' | sed 's/^.*Version: //; s/-.*\$//' | sed 's/ -*//; s/ .*\$//'"), topic: versions
 
     when:
@@ -27,7 +28,7 @@ process OPENMS_FEATUREFINDERIDENTIFICATION  {
     """
     FeatureFinderIdentification \\
         -in $mzml \\
-        -out ${prefix}.featureXML \\
+        -out ${prefix}.featureparquet \\
         -threads $task.cpus \\
         $args
     """
@@ -36,6 +37,6 @@ process OPENMS_FEATUREFINDERIDENTIFICATION  {
         def prefix = task.ext.prefix ?: "${meta.id}_${meta.sample}_${meta.condition}"
 
         """
-        touch ${prefix}.featureXML
+        mkdir ${prefix}.featureparquet
         """
 }

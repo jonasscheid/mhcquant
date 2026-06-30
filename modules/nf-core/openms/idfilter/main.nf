@@ -1,6 +1,7 @@
 process OPENMS_IDFILTER {
     tag "$meta.id"
     label 'process_single'
+    label 'openms'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
@@ -11,7 +12,7 @@ process OPENMS_IDFILTER {
     tuple val(meta), path(id_file), path(filter_file)
 
     output:
-    tuple val(meta), path("*.{idXML,consensusXML}"), emit: filtered
+    tuple val(meta), path("*.{idXML,consensusXML,idparquet,consensusparquet}"), emit: filtered
     tuple val("${task.process}"), val('openms'), eval("FileInfo --help 2>&1 | sed -nE 's/^Version: ([0-9.]+).*/\\1/p'"), emit: versions_openms, topic: versions
 
     when:

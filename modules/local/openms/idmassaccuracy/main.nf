@@ -1,6 +1,9 @@
 process OPENMS_IDMASSACCURACY {
     tag "$meta.id"
     label 'process_single'
+    // No 'openms' label on purpose: IDMassAccuracy was removed in OpenMS 3.6.0,
+    // so this QC-only step stays pinned to the 3.5.x BioContainer and consumes the
+    // idXML emit of PeptideIndexer rather than parquet.
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?

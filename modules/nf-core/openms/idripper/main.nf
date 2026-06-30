@@ -1,6 +1,7 @@
 process OPENMS_IDRIPPER {
     tag "$meta.id"
     label 'process_single'
+    label 'openms'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
@@ -11,7 +12,9 @@ process OPENMS_IDRIPPER {
     tuple val(meta), path(merged_idxml)
 
     output:
-    tuple val(meta), path("*.idXML"), emit: idxmls
+    // Percolator now emits .idparquet; IDRipper reads it and rips per-run. Match
+    // either format (downstream join on run-spectra basename drops the input copy).
+    tuple val(meta), path("*.{idXML,idparquet}"), emit: idxmls
     tuple val("${task.process}"), val('openms'), eval("FileInfo --help 2>&1 | sed -nE 's/^Version: ([0-9.]+).*/\\1/p'"), emit: versions_openms, topic: versions
 
     when:

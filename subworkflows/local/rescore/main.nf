@@ -9,6 +9,10 @@
 include { MS2RESCORE                                                  } from '../../../modules/local/ms2rescore'
 include { OPENMS_PSMFEATUREEXTRACTOR                                  } from '../../../modules/local/openms/psmfeatureextractor'
 include {
+    OPENMS_IDFILECONVERTER as OPENMS_IDFILECONVERTER_MS2RESCORE ;
+    OPENMS_IDFILECONVERTER as OPENMS_IDFILECONVERTER_FDR
+} from '../../../modules/local/openms/idfileconverter/main'
+include {
     OPENMS_PERCOLATORADAPTER ;
     OPENMS_PERCOLATORADAPTER as OPENMS_PERCOLATORADAPTER_GLOBAL
 } from '../../../modules/local/openmsthirdparty/percolatoradapter'
@@ -34,13 +38,18 @@ workflow RESCORE {
     // Compute features via ms2rescore
     MS2RESCORE(ch_merged_runs)
 
+    // Bridge idXML -> idparquet: from here the rescoring spine runs on parquet.
+    // Regular ID tools preserve their input format, so the only way to switch is IDFileConverter.
+    OPENMS_IDFILECONVERTER_MS2RESCORE(MS2RESCORE.out.idxml.map { meta, idxml -> [meta, idxml, "idparquet"] })
+    ch_ms2rescore_idparquet = OPENMS_IDFILECONVERTER_MS2RESCORE.out.converted
+
     if (params.rescoring_engine == 'mokapot') {
         log.warn("The rescoring engine is set to mokapot. This rescoring engine currently only supports psm-level-fdr via ms2rescore.")
         if (params.global_fdr) {
             log.warn("Global FDR is currently not supported by mokapot. The global_fdr parameter will be ignored.")
         }
         // Switch comet e-value to mokapot q-value
-        OPENMS_IDSCORESWITCHER(MS2RESCORE.out.idxml)
+        OPENMS_IDSCORESWITCHER(ch_ms2rescore_idparquet)
         ch_rescored_runs = OPENMS_IDSCORESWITCHER.out.idxml
 
         // Filter by mokapot q-value
@@ -49,7 +58,7 @@ workflow RESCORE {
     }
     else {
         // Extract PSM features for Percolator
-        OPENMS_PSMFEATUREEXTRACTOR(MS2RESCORE.out.idxml.join(MS2RESCORE.out.feature_names))
+        OPENMS_PSMFEATUREEXTRACTOR(ch_ms2rescore_idparquet.join(MS2RESCORE.out.feature_names))
 
         // Run Percolator with local FDR
         OPENMS_PERCOLATORADAPTER(OPENMS_PSMFEATUREEXTRACTOR.out.idxml)
@@ -90,18 +99,29 @@ workflow RESCORE {
         }
     }
 
+    // Bridge: idparquet FDR result -> idXML copy. The parquet copy drives TextExporter + QUANT;
+    // the idXML copy serves the line-count emptiness check and the idXML-only consumers
+    // (IonAnnotator, easypqp backfilter).
+    OPENMS_IDFILECONVERTER_FDR(ch_filter_q_value.map { meta, file -> [meta, file, "idXML"] })
+
+    // Correlate each parquet FDR result with its idXML copy using a plain String key, while
+    // CARRYING the original meta as a value. Joining ON the meta map normalises its GString id
+    // to a String in the emitted key, which then fails to match the GString-keyed groupKey in
+    // QUANT's combine (groupKey-vs-String does not match). Carrying meta preserves the id type.
     ch_filter_q_value
-        .map { meta, file -> [[id: meta.id], file] }
+        .map { meta, parquet -> [meta.id.toString(), meta, parquet] }
+        .join( OPENMS_IDFILECONVERTER_FDR.out.converted.map { meta, idxml -> [meta.id.toString(), idxml] } )
         .branch {
             // Empty FDR-filtered idXML (no peptides) is ~120 lines of OpenMS scaffolding.
-            non_empty: it[1].countLines() > 130
+            non_empty: it[3].countLines() > 130
             empty:     true
         }
         .set { ch_fdr_branched }
 
     emit:
     rescored_runs      = ch_rescored_runs.map { meta, file -> [[id: meta.id], file] }
-    fdr_filtered       = ch_fdr_branched.non_empty
-    fdr_filtered_empty = ch_fdr_branched.empty
+    fdr_filtered       = ch_fdr_branched.non_empty.map { _id, meta, parquet, _idxml -> [[id: meta.id], parquet] }
+    fdr_filtered_idxml = ch_fdr_branched.non_empty.map { _id, meta, _parquet, idxml -> [[id: meta.id], idxml] }
+    fdr_filtered_empty = ch_fdr_branched.empty.map      { _id, meta, parquet, _idxml -> [[id: meta.id], parquet] }
     multiqc_files      = ch_multiqc_files
 }

@@ -158,7 +158,7 @@ workflow MHCQUANT {
     if (params.generate_speclib) {
         OPENMSTHIRDPARTY_COMETADAPTER.out.idxml
                 .map { meta, idxml -> [ [id: "${meta.sample}_${meta.condition}"], meta, idxml] }
-                .combine(RESCORE.out.fdr_filtered, by:0)
+                .combine(RESCORE.out.fdr_filtered_idxml, by:0)
                 .map { groupKey, meta, comet_idxml, fdr_filtered_idxml -> [meta, comet_idxml, fdr_filtered_idxml] }
                 .set { ch_fdrfilter_comet_idxml }
 
@@ -190,7 +190,7 @@ workflow MHCQUANT {
                   mzml ]
             }
             .groupTuple()
-            .join(RESCORE.out.fdr_filtered)
+            .join(RESCORE.out.fdr_filtered_idxml)
             .map { key, searchMetas, mzmls, idxml -> [key + searchMetas[0], mzmls, idxml] }
             .set{ ch_ion_annotator_input }
 

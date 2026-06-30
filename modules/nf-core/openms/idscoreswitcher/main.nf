@@ -1,6 +1,7 @@
 process OPENMS_IDSCORESWITCHER {
     tag "$meta.id"
     label 'process_single'
+    label 'openms'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
@@ -11,7 +12,7 @@ process OPENMS_IDSCORESWITCHER {
     tuple val(meta), path(idxml)
 
     output:
-    tuple val(meta), path("*.idXML"), emit: idxml
+    tuple val(meta), path("*.idparquet"), emit: idxml
     tuple val("${task.process}"), val('openms'), eval("FileInfo --help 2>&1 | sed -nE 's/^Version: ([0-9.]+).*/\\1/p'"), emit: versions_openms, topic: versions
 
     when:
@@ -20,21 +21,21 @@ process OPENMS_IDSCORESWITCHER {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    if ("$idxml" == "${prefix}.idXML") error "Input and output names are the same, set prefix in module configuration to disambiguate!"
+    if ("$idxml" == "${prefix}.idparquet") error "Input and output names are the same, set prefix in module configuration to disambiguate!"
 
     """
     IDScoreSwitcher \\
         -in $idxml \\
-        -out ${prefix}.idXML \\
+        -out ${prefix}.idparquet \\
         -threads $task.cpus \\
         $args
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    if ("$idxml" == "${prefix}.idXML") error "Input and output names are the same, set prefix in module configuration to disambiguate!"
+    if ("$idxml" == "${prefix}.idparquet") error "Input and output names are the same, set prefix in module configuration to disambiguate!"
 
     """
-    touch ${prefix}.idXML
+    mkdir ${prefix}.idparquet
     """
 }

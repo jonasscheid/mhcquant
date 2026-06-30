@@ -1,6 +1,7 @@
 process OPENMS_PSMFEATUREEXTRACTOR {
     tag "$meta.id"
     label 'process_low'
+    label 'openms'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -11,7 +12,7 @@ process OPENMS_PSMFEATUREEXTRACTOR {
     tuple val(meta), path(idxml), path(feature_file)
 
     output:
-    tuple val(meta), path("*.idXML"), emit: idxml
+    tuple val(meta), path("*.idparquet"), emit: idxml
     tuple val("${task.process}"), val('openms'), eval("FileInfo --help 2>&1 | sed -nE 's/^Version: ([0-9.]+).*/\\1/p'"), topic: versions
 
     when:
@@ -27,7 +28,7 @@ process OPENMS_PSMFEATUREEXTRACTOR {
 
     PSMFeatureExtractor \\
         -in $idxml \\
-        -out ${prefix}.idXML \\
+        -out ${prefix}.idparquet \\
         -threads $task.cpus \\
         -extra \$extra_features \\
         $args
@@ -37,6 +38,6 @@ process OPENMS_PSMFEATUREEXTRACTOR {
     def prefix = task.ext.prefix ?: "${meta.id}_psm"
 
     """
-    touch ${prefix}.idXML
+    mkdir ${prefix}.idparquet
     """
 }

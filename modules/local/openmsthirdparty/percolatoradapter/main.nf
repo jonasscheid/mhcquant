@@ -1,6 +1,7 @@
 process OPENMS_PERCOLATORADAPTER {
     tag "$meta.id"
     label 'process_medium'
+    label 'openms_thirdparty'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -11,7 +12,7 @@ process OPENMS_PERCOLATORADAPTER {
     tuple val(meta), path(merged_with_features)
 
     output:
-    tuple val(meta), path("*.idXML")                         , emit: idxml
+    tuple val(meta), path("*.idparquet")                     , emit: idxml
     tuple val(meta), path("*_percolator_feature_weights.tsv"), emit: feature_weights, optional: true
     tuple val("${task.process}"), val('PercolatorAdapter'), eval("PercolatorAdapter 2>&1 | grep -E '^Version(.*)' | sed 's/Version: //g' | cut -d ' ' -f 1"), topic: versions
     tuple val("${task.process}"), val('percolator'), eval("percolator -h 2>&1 | grep -E '^Percolator version(.*)' | sed 's/Percolator version //g' | cut -d',' -f1"), topic: versions
@@ -26,7 +27,7 @@ process OPENMS_PERCOLATORADAPTER {
     """
     PercolatorAdapter \\
         -in $merged_with_features \\
-        -out ${prefix}.idXML \\
+        -out ${prefix}.idparquet \\
         -threads $task.cpus \\
         $args
     """
@@ -35,6 +36,6 @@ process OPENMS_PERCOLATORADAPTER {
     def prefix = task.ext.prefix ?: "${meta.id}_pout"
 
     """
-    touch ${prefix}.idXML
+    mkdir ${prefix}.idparquet
     """
 }
