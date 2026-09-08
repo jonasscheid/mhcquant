@@ -5,6 +5,16 @@
         "https://github.com/nf-core/modules.git": {
             "modules": {
                 "nf-core": {
+                    "easypqp/convert": {
+                        "branch": "master",
+                        "git_sha": "731ad7cf108acd9305a16aa167b7ef5bcf9dc43f",
+                        "installed_by": ["modules"]
+                    },
+                    "easypqp/library": {
+                        "branch": "master",
+                        "git_sha": "86eb20853edff4bc85fa21104c87920270eac92e",
+                        "installed_by": ["modules"]
+                    },
                     "gunzip": {
                         "branch": "master",
                         "git_sha": "0902eac3012baaf4f9ab6513c8c55acc9353c96c",
