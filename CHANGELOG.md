@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced local `pridepy/download_file` with upstream nf-core `pridepy/downloadfile` [#457](https://github.com/nf-core/mhcquant/pull/457)
 - Bumped `nf-schema` plugin to 2.7.2 [#465](https://github.com/nf-core/mhcquant/pull/465)
 - Stopped publishing the intermediate `_psm.idXML` and `_ms2rescore.idXML` files to `intermediate_results/rescoring` [#470](https://github.com/nf-core/mhcquant/pull/470)
+- Replaced local `easypqp/convert` and `easypqp/library` modules with the nf-core/modules equivalents [#473](https://github.com/nf-core/mhcquant/pull/473)
 
 ### `Fixed`
 
@@ -37,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Dependency | Old version | New version |
 | ---------- | ----------- | ----------- |
+| `easypqp`  | 0.1.57      | 0.1.59      |
 | `MultiQC`  | 1.33.0      | 1.35.0      |
 | `Nf-core`  | 3.5.1       | 4.1.0       |
 
