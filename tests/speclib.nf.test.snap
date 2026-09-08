@@ -4,10 +4,10 @@
             28,
             {
                 "EASYPQP_CONVERT": {
-                    "easypqp": "0.1.57"
+                    "easypqp": "0.1.59"
                 },
                 "EASYPQP_LIBRARY": {
-                    "easypqp": "0.1.57"
+                    "easypqp": "0.1.59"
                 },
                 "MS2RESCORE": {
                     "MS2Rescore": "3.1.5"
@@ -394,7 +394,7 @@
                 ]
             ]
         ],
-        "timestamp": "2026-06-11T12:56:10.553802125",
+        "timestamp": "2026-09-08T06:52:11.885327151",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
