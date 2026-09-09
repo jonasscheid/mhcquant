@@ -174,12 +174,8 @@
                 "pipeline_info/nf_core_mhcquant_software_mqc_versions.yml"
             ],
             [
-                "PBMC007_B.mzTab:md5,28c03f8e195419730b69efaa7295efa7",
-                "PBMC009_A.mzTab:md5,2b68ec206e2ad7c42cd60aa273e8b8d1",
                 "PBMC007_msms29.trafoXML:md5,bc85f3bbfba232ad9154cd5bb8267b1a",
-                "PBMC009_msms37.trafoXML:md5,3087e500735c5e5e98fd05342df94353",
-                "1_PBMC009_A.featureXML:md5,1fc92e7dcf71ee81bb07622469820a05",
-                "6_PBMC007_B.featureXML:md5,64277ec8bbdeb2ee5bec37d5f4b72da0"
+                "PBMC009_msms37.trafoXML:md5,3087e500735c5e5e98fd05342df94353"
             ],
             [
                 [
